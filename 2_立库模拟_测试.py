@@ -41,22 +41,22 @@ for i in range(2, 7200 + 1):
         print(l_idx)
 print('+++++++++++++++++++++++++++++++++++++')
 print(len(l_idx))
-df_idx = pd.DataFrame(l_idx,index=range(1, len(l_idx)+1))
+df_idx = pd.DataFrame(l_idx, index=range(1, len(l_idx) + 1))
 
 
-
-df_idx['dis'] = round(np.sqrt((df_idx[0] * 1.5) ** 2 + (df_idx[1] * 1.2) ** 2),2)
+df_idx['dis'] = round(
+    np.sqrt((df_idx[0] * 1.5) ** 2 + (df_idx[1] * 1.2) ** 2), 2)
 df_idx['dis_x'] = 0
 df_idx.columns = ['x', 'y', 'dis', 'disR']
 
-df_idx.loc[ (df_idx[ 'x' ] < 9)&(df_idx[ 'y' ] < 9), 'disR' ] = 5
+df_idx.loc[(df_idx['x'] < 9) & (df_idx['y'] < 9), 'disR'] = 5
 # df_idx.loc[ x ] = 5
 # print( df_idx )
 
 # 入库200只
-print( '入库200只' )
-idx = df_idx.loc[ (df_idx[ 'disR' ] == 0)].index
-df2 = df_idx.loc[idx].sort_values(by = 'dis', ascending = True)
+print('入库200只')
+idx = df_idx.loc[(df_idx['disR'] == 0)].index
+df2 = df_idx.loc[idx].sort_values(by='dis', ascending=True)
 df2['idx'] = df2.index
 print(df2.head(200))
 
@@ -67,7 +67,7 @@ df_idx.loc[idx2, 'disR'] = 9
 print(idx2)
 print(df_idx.loc[df_idx['disR'] == 9])
 
-df4=df_idx.groupby(by='disR').count()
+df4 = df_idx.groupby(by='disR').count()
 print(df4)
 print('=========================')
 if 0 in df4.index:

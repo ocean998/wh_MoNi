@@ -1,11 +1,11 @@
 """立库模拟程序基础类"""
+import pandas as pd
 import pprint
 
 import numpy as np
 
 # 设置打印全部
 np.set_printoptions(threshold=np.inf)
-import pandas as pd
 
 # 显示所有列
 pd.set_option('display.max_columns', None)
@@ -14,6 +14,7 @@ pd.set_option('display.max_rows', None)
 # 设置value的显示长度为100，默认为50
 pd.set_option('max_colwidth', 100)
 
+
 # print = pprint.pprint
 
 
@@ -21,13 +22,17 @@ class TaskList():
     def __init__(self):
         self.task = pd.DataFrame()
         # 任务号，数量，完成数量，设备状态，设备类型
-        self.task.columns = ['task_no', 'quantity', 'complete_quantity', 'status', 'type']
+        self.task.columns = [
+            'task_no',
+            'quantity',
+            'complete_quantity',
+            'status',
+            'type']
 
     """入库任务，需要传入 任务号，数量，完成数量，设备状态，设备类型"""
 
     def input_equip(self, task_info: {}):
         pass
-
 
 
 class Frame:
@@ -43,7 +48,11 @@ class Frame:
 
         # 设置立库形状，左下角 至 右上角 序号递增
         self.shelves_idx = np.arange(
-            1, self.cnt + 1).reshape((self.num_h, self.num_w))
+            1,
+            self.cnt +
+            1).reshape(
+            (self.num_h,
+             self.num_w))
 
         # 初始化DataFrame，每行保存货架x、y坐标，坐标到左下角距离
         l_idx = np.argwhere(self.shelves_idx == 1) + 1
@@ -59,45 +68,80 @@ class Frame:
 
         # print(self.df_dis)
         # 距离是直角三角形斜边，作为机器人移动到相应时间的基础,此处是左边到出口距离
-        self.df_dis['dis_1'] = round(np.sqrt((self.df_dis['x'] * 1.5) ** 2 + \
-                                             (self.df_dis['y'] * 1.2) ** 2), 2)
+        self.df_dis['dis_1'] = round(
+            np.sqrt((self.df_dis['x'] * 1.5)**2 + (self.df_dis['y'] * 1.2)**2), 2)
 
         # 本货柜到右边出口距离
-        self.df_dis['dis_2'] = round(np.sqrt((self.df_dis['y'] * 1.2) ** 2 + \
-                                             ((self.num_w + 1 - self.df_dis['x']) * 1.5) ** 2), 2)
+        self.df_dis['dis_2'] = round(np.sqrt(
+            (self.df_dis['y'] * 1.2)**2 + ((self.num_w + 1 - self.df_dis['x']) * 1.5)**2), 2)
         self.df_dis['task'] = 0
         self.df_dis.columns = ['x', 'y', 'dis_left', 'dis_right', 'task']
 
     # 获取货架上空闲货柜数量
-    def get_empty_cnt(self, task_type:int = 0)->int:
+    def get_empty_cnt(self, task_type: int = 0) -> int:
         rst = self.df_dis.groupby('task').count()
         if task_type in rst.index:
             rst_cnt = rst.loc[task_type][0]
         else:
-            rst_cnt=0
+            rst_cnt = 0
         return rst_cnt
 
+    # 根据任务信息返回 标记在货柜上单标记
+    def get_task_flag(self, task: list = None)->int:
+        #     ['right', 200, 'dan', 'new']
+        # 单相 三相三线 三相四线 互感器 集中器 采集器
+        flg = 0
+        if task[2] == 'dan':
+            flg += 100
+        if task[2] == 'sansan':
+            flg += 300
+        if task[2] == 'sansi':
+            flg += 400
+        if task[2] == 'hgq':
+            flg += 200
+        if task[2] == 'jzq':
+            flg += 600
+        if task[2] == 'cjq':
+            flg += 700
+
+        # 新表 合格表 不合格
+        if task[3] == 'xin':
+            flg += 10
+        if task[3] == 'hege':
+            flg += 90
+        if task[3] == 'buhege':
+            flg += 40
+        return flg
 
     # 入库子任务 exit_x确定从左边入库还是右边, sub_task 子任务信息
-    def SubTaskIn(self, exit_x: str,  sub_task: list = None):
-        cnt = sub_task[1]
+    def SubTaskIn(self, sub_task: list = None):
+        cnt_tot = sub_task[1]
         cur_cnt = self.get_empty_cnt(0)
         # 当前没有足够的空货位，不能入库
-        if cnt > cur_cnt:
+        if cnt_tot > cur_cnt:
             return None
         # 开始入库操作
         # 按照距离排序
-        if exit_x == 'right':
-            df1 = self.df_dis.sort_values(by='dis_right', ascending=True).head(cnt)
-        if exit_x == 'left':
-            df1 = self.df_dis.sort_values(by='dis_left', ascending=True).head(cnt)
+        if sub_task[0] == 'right':
+            df1 = self.df_dis.loc[self.df_dis['task'] == 0].sort_values(
+                by='dis_right', ascending=True).head(cnt_tot)
+            # 移动距离求和，各列分别按照行相加
+            df_tot = df1.sum(axis=0)
+            dis_tot = df_tot[ 'dis_right' ]
+
+        if sub_task[0] == 'left':
+            df1 = self.df_dis.loc[self.df_dis['task'] == 0].sort_values(
+                by='dis_left', ascending=True).head(cnt_tot)
+            df_tot = df1.sum(axis=0)
+            dis_tot = df_tot[ 'dis_left' ]
+
         idx = df1.index
-        self.df_dis.loc[idx, 'task'] = 2
-        cur_cnt = self.get_empty_cnt(2)
-        return  cur_cnt
+        task_flg = self.get_task_flag(sub_task)
+        self.df_dis.loc[idx, 'task'] = task_flg
+
+        return dis_tot
 
     # df2 = df_idx.loc[idx].sort_values(by='dis', ascending=True)
-
 
     def show_status(self):
 
@@ -110,17 +154,17 @@ class Frame:
 
 
 if __name__ == '__main__':
-    frameA = Frame(30, 20)
+    frameA = Frame(70, 30)
     frameA.show_status()
     # col = frameA.df_dis.values
 
     # print(frameA.df_dis)
-    task_list = ['right', 200, 'dan', 'new']
-    cnt = frameA.SubTaskIn('right', task_list)
+    task_list = ['right', 200, 'dan', 'xin']
+    cnt = frameA.SubTaskIn( task_list)
     print(cnt)
     print(frameA.df_dis.groupby('task').count())
 
-    task_list = ['right', 300, 'dan', 'new']
-    cnt = frameA.SubTaskIn('right', task_list)
+    task_list = ['right', 300, 'sansan', 'hege']
+    cnt = frameA.SubTaskIn(  task_list)
     print(cnt)
     print(frameA.df_dis.groupby('task').count())
