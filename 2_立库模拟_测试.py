@@ -71,9 +71,10 @@ df4 = df_idx.groupby(by='disR').count()
 print(df4)
 print('=========================')
 if 0 in df4.index:
-    print(type(df4.loc[0]))
-    print(df4.loc[5][0])
-
+    print(df4.index.values)
+    print('xxxxxxxxxxxxxxxxxxxxx')
+    print(df4['x'])
+    print( df4[ 'x' ][5] )
 # 192.30.253.112 github.com
 # 192.30.253.113 github.com
 # 151.101.184.133 assets-cdn.github.com
