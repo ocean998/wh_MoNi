@@ -1,8 +1,8 @@
 """立库模拟程序基础类"""
-import pandas as pd
-import pprint
-import numpy as np
 import datetime
+
+import numpy as np
+import pandas as pd
 
 # 不用科学计数法输出
 np.set_printoptions(suppress=True)
@@ -75,11 +75,11 @@ class Frame:
         # print(self.df_dis)
         # 距离是直角三角形斜边，作为机器人移动到相应时间的基础,此处是左边到出口距离
         self.df_dis['dis_1'] = round(
-            np.sqrt((self.df_dis['x'] * 1.5)**2 + (self.df_dis['y'] * 1.2)**2), 2)
+            np.sqrt((self.df_dis['x'] * 1.5) ** 2 + (self.df_dis['y'] * 1.2) ** 2), 2)
 
         # 本货柜到右边出口距离
         self.df_dis['dis_2'] = round(np.sqrt(
-            (self.df_dis['y'] * 1.2)**2 + ((self.num_w + 1 - self.df_dis['x']) * 1.5)**2), 2)
+            (self.df_dis['y'] * 1.2) ** 2 + ((self.num_w + 1 - self.df_dis['x']) * 1.5) ** 2), 2)
         self.df_dis['task'] = 0
         self.df_dis.columns = ['x', 'y', 'dis_left', 'dis_right', 'task']
 
@@ -100,44 +100,47 @@ class Frame:
         cnt = rst['x']
 
         rst_df = pd.DataFrame(columns=['存放类别', '数量', '占比'])
-        type = ''
+        container  = ''
 
         for t in type_stat:
             info_list = []
             if int(t / 10) == 1:
-                type = '单相'
+                container  = '单相'
             if int(t / 10) == 2:
-                type = '互感器'
+                container  = '互感器'
 
             if int(t / 10) == 3:
-                type = '三相三线'
+                container  = '三相三线'
             if int(t / 10) == 4:
-                type = '三相四线'
+                container  = '三相四线'
 
             if int(t / 10) == 9:
-                type = '集中器'
+                container  = '集中器'
             if int(t / 10) == 8:
-                type = ' 采集器'
+                container  = ' 采集器'
 
             if t % 10 == 0:
-                type += '-新购'
+                container  += '/新购'
             if t % 10 == 1:
-                type += '-合格'
+                container  += '/合格'
             if t % 10 == 2:
-                type += '-自动不合格'
+                container  += '/自动不合格'
             if t % 10 == 4:
-                type += '-人工不合格'
+                container  += '/人工不合格'
 
             if t == 0:
-                type = '空货柜'
-            info_list.append(type)
-            info_list.append(cnt[t])
-            info_list.append('{}%'.format(round(cnt[t] * 100 / total, 2)))
+                container  = ' 空货柜'
+            container  = '{:。>8}'.format(container )
+            info_list.append(container )
+            container  = '{: >6}'.format(cnt[t])
+            info_list.append(container )
+
+            info_list.append('{: >4}%'.format(round(cnt[t] * 100 / total, 2)))
 
             info_df = pd.DataFrame([info_list], columns=['存放类别', '数量', '占比'])
             rst_df = rst_df.append(info_df, ignore_index=True)
 
-        pprint.pprint(rst_df)
+        print(rst_df)
 
     # 根据任务信息返回 标记在货柜上单标记
 
@@ -181,7 +184,7 @@ class Frame:
         cur_task = sub_task.copy()
         cur_task.append(
             datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
-        #'right', 300,'sansan','hege'
+        # 'right', 300,'sansan','hege'
 
         # 开始入库操作
         # 按照距离排序
