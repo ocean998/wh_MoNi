@@ -38,4 +38,4 @@ df.loc['Row_sum'] = df.apply(lambda x: x.sum())
 print('==============')
 print(df['B'])
 
-print(int( 26/10) )
+print("空储位{}, 入库数量{}，不能入库！".format(100, 110))

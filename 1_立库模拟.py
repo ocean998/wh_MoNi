@@ -44,6 +44,7 @@ class Frame:
                 'count',
                 'type',
                 'stat',
+                'ioFlg'
                 'timestamp',
                 'distance'])
 
@@ -75,13 +76,13 @@ class Frame:
         # print(self.df_dis)
         # 距离是直角三角形斜边，作为机器人移动到相应时间的基础,此处是左边到出口距离
         self.df_dis['dis_1'] = round(
-            np.sqrt((self.df_dis['x'] * 1.5) ** 2 + (self.df_dis['y'] * 1.2) ** 2), 2)
+            np.sqrt((self.df_dis['x'] * 1.5)**2 + (self.df_dis['y'] * 1.2)**2), 2)
 
         # 本货柜到右边出口距离
         self.df_dis['dis_2'] = round(np.sqrt(
-            (self.df_dis['y'] * 1.2) ** 2 + ((self.num_w + 1 - self.df_dis['x']) * 1.5) ** 2), 2)
+            (self.df_dis['y'] * 1.2)**2 + ((self.num_w + 1 - self.df_dis['x']) * 1.5)**2), 2)
         self.df_dis['task'] = 0
-        self.df_dis.columns = ['x', 'y', 'dis_left', 'dis_right', 'task']
+        self.df_dis.columns = ['x', 'y','dis_left','dis_right','task']
 
     # 获取货架上任务列表中指定设备类别、状态的货柜数量
     def get_frame_cnt(self, task_type: int = 0) -> int:
@@ -100,40 +101,40 @@ class Frame:
         cnt = rst['x']
 
         rst_df = pd.DataFrame(columns=['存放类别', '数量', '占比'])
-        container  = ''
+        container = ''
 
         for t in type_stat:
             info_list = []
             if int(t / 10) == 1:
-                container  = '单相'
+                container = '单相'
             if int(t / 10) == 2:
-                container  = '互感器'
+                container = '互感器'
 
             if int(t / 10) == 3:
-                container  = '三相三线'
+                container = '三相三线'
             if int(t / 10) == 4:
-                container  = '三相四线'
+                container = '三相四线'
 
             if int(t / 10) == 9:
-                container  = '集中器'
+                container = '集中器'
             if int(t / 10) == 8:
-                container  = ' 采集器'
+                container = ' 采集器'
 
             if t % 10 == 0:
-                container  += '/新购'
+                container += '/新购'
             if t % 10 == 1:
-                container  += '/合格'
+                container += '/合格'
             if t % 10 == 2:
-                container  += '/自动不合格'
+                container += '/自动不合格'
             if t % 10 == 4:
-                container  += '/人工不合格'
+                container += '/人工不合格'
 
             if t == 0:
-                container  = ' 空货柜'
-            container  = '{:。>8}'.format(container )
-            info_list.append(container )
-            container  = '{: >6}'.format(cnt[t])
-            info_list.append(container )
+                container = ' 空货柜'
+            container = '{:。>8}'.format(container)
+            info_list.append(container)
+            container = '{: >6}'.format(cnt[t])
+            info_list.append(container)
 
             info_list.append('{: >4}%'.format(round(cnt[t] * 100 / total, 2)))
 
@@ -173,15 +174,17 @@ class Frame:
             flg += 3
         return flg
 
-    # 入库子任务 gateway_x确定从左边入库还是右边, sub_task 子任务信息
+    # 入库子任务 sub_task[0]确定从左边入库还是右边, sub_task 子任务信息
     def SubTaskIn(self, sub_task: list = None):
         cnt_tot = sub_task[1]
         cur_cnt = self.get_frame_cnt(0)
         # 当前没有足够的空货位，不能入库
         if cnt_tot > cur_cnt:
+            print("空储位{}, 入库数量{}，不能入库！".format(cur_cnt, cnt_tot))
             return None
         # 保存本次任务开始时间戳
         cur_task = sub_task.copy()
+        cur_task.append('IN')
         cur_task.append(
             datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
         # 'right', 300,'sansan','hege'
@@ -204,7 +207,7 @@ class Frame:
         idx = df1.index
         task_flg = self.get_task_flag(sub_task)
         self.df_dis.loc[idx, 'task'] = task_flg
-        print(task_flg)
+        print(cur_task)
         # 任务执行时间，保存到完成任务列表
         cur_task.append(dis_tot)
         t_df = pd.DataFrame(
@@ -214,6 +217,7 @@ class Frame:
                 'count',
                 'type',
                 'stat',
+                'ioFlg'
                 'timestamp',
                 'distance'])
         self.completed_task = self.completed_task.append(
@@ -221,7 +225,55 @@ class Frame:
 
         return dis_tot
 
-    # df2 = df_idx.loc[idx].sort_values(by='dis', ascending=True)
+    # 出库子任务， sub_task[0]确定从左边入库还是右边, sub_task 子任务信息
+    def SubTaskOut(self, sub_task: list = None):
+        cnt_tot = sub_task[1]
+        task_flg = self.get_task_flag(sub_task)
+        cur_cnt = self.get_frame_cnt(task_flg)
+        # 当前库存数量不足，不能出库
+        print(task_flg)
+        if cnt_tot > cur_cnt:
+            print("当前库存数量{}, 要求出库数量{}，不能入库！".format(cur_cnt, cnt_tot))
+            return None
+        # 保存本次任务开始时间戳
+        cur_task = sub_task.copy()
+        cur_task.append('OUT')
+        cur_task.append(
+            datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+        #     开始出库操作
+        if sub_task[0] == 'right':
+            df1 = self.df_dis.loc[self.df_dis['task'] == task_flg].sort_values(
+                by='dis_right', ascending=True).head(cnt_tot)
+            # 移动距离求和，各列分别按照行相加
+            df_tot = df1.sum(axis=0)
+            dis_tot = df_tot['dis_right']
+        if sub_task[0] == 'left':
+            df1 = self.df_dis.loc[self.df_dis['task'] == task_flg].sort_values(
+                by='dis_left', ascending=True).head(cnt_tot)
+            # 移动距离求和，各列分别按照行相加
+            df_tot = df1.sum(axis=0)
+            dis_tot = df_tot['dis_left']
+
+        idx = df1.index
+        self.df_dis.loc[idx, 'task'] = 0
+
+        # 任务执行时间，保存到完成任务列表
+        cur_task.append(dis_tot)
+        t_df = pd.DataFrame(
+            [cur_task],
+            columns=[
+                'gateway',
+                'count',
+                'type',
+                'stat',
+                'ioFlg',
+                'timestamp',
+                'distance'])
+        print(t_df)
+        self.completed_task = self.completed_task.append(
+            t_df, ignore_index=True)
+
+        return dis_tot
 
     def show_status(self):
         print('**********立库信息**********\n')
@@ -231,7 +283,7 @@ class Frame:
         print('\t< 2 >\t立库形状：', self.shelves_idx.shape)
         print('\n\t< 3 >\t已完成任务清单: \n', self.completed_task)
         print('\n\t< 4 >\t当前库存情况')
-        print(self.df_dis.groupby('task').count())
+        self.get_frame_info()
         print('******************************\n\n')
 
 
@@ -246,6 +298,16 @@ if __name__ == '__main__':
 
     task_list = ['right', 300, 'sansan', 'hege']
     frameA.SubTaskIn(task_list)
-    # frameA.show_status()
 
-    frameA.get_frame_info()
+    task_list = ['right', 500, 'dan', 'xin']
+    frameA.SubTaskIn(task_list)
+
+    task_list = ['right', 700, 'dan', 'hege']
+    frameA.SubTaskIn(task_list)
+
+    task_list = ['right', 400, 'dan', 'xin']
+    frameA.SubTaskOut(task_list)
+
+    frameA.show_status()
+
+    print(frameA.df_dis)
