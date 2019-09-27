@@ -15,18 +15,24 @@ pd.set_option('max_colwidth', 100)
 
 # 总任务数量平均分，有余数的最后一个子任务调节
 
-
-columes = ['equip_type', 'task_no', 'quantity']
+# 到货任务列表，
+task_columes = ['equip_type', 'task_no', 'quantity']
+# 分解后的子任务列表
+sub_columns = [
+    'task_no',
+    'sub_task_no',
+    'cnt',
+    'equip_type',
+    'status',
+    'io_type']
 
 
 class TaskList():
     def __init__(self):
         # 需要在分解的总任务列表
         self.task_df = pd.DataFrame(
-            columns=[
-                'equip_type',
-                'task_no',
-                'quantity'])
+            columns=task_columes)
+        self.sub_task_df = pd.DataFrame(columns= sub_columns)
         # 任务号，数量，完成数量，设备状态，设备类型
         self.task_no = 100000
         # 每个任务5000-30000，共210个任务
@@ -56,7 +62,7 @@ class TaskList():
         for num in numbers:
             sub_no += 1
             t = [equip, self.task_no + sub_no, num]
-            df = pd.DataFrame([t], columns=columes)
+            df = pd.DataFrame([t], columns=task_columes)
             tl.append(df)
         rst_df = pd.concat(tl)
         self.task_df = self.task_df.append(rst_df, ignore_index=True)
@@ -99,23 +105,19 @@ class TaskList():
             sub_l = [task_no, sub_no, n, equip_type, status, io_type]
             sub_list.append(sub_l)
 
-        print('\n  *****sub task : task_no:{}, sub_no:{}****'.format(task_no, sub_no))
+        # print('\n  *****sub task : task_no:{}, sub_no:{}****'.format(task_no, sub_no))
         sub_t = pd.DataFrame(
-            sub_list,
-            columns=[
-                'task_no',
-                'sub_task_no',
-                'cnt',
-                'equip_type',
-                'status',
-                'io_type'])
-        print(sub_t)
+            sub_list,columns=sub_columns
+        )
 
+        self.sub_task_df = self.sub_task_df.append(sub_t, ignore_index=True)
 
 
 if __name__ == '__main__':
     all_task = TaskList()
     print(all_task.task_df)
+    print('-----------------------------------')
+    print(all_task.sub_task_df)
     #
     # qt = queue.Queue()
     # for cnt in dd:
