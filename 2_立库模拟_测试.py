@@ -64,6 +64,7 @@ idx2 = df2.head(200).index
 print(len(idx2))
 df_idx.loc[idx2, 'disR'] = 9
 # print(df_idx.loc[idx2])
+
 print(idx2)
 print(df_idx.loc[df_idx['disR'] == 9])
 
@@ -75,6 +76,8 @@ if 0 in df4.index:
     print('xxxxxxxxxxxxxxxxxxxxx')
     print(df4['x'])
     print( df4[ 'x' ][5] )
+
+
 # 192.30.253.112 github.com
 # 192.30.253.113 github.com
 # 151.101.184.133 assets-cdn.github.com

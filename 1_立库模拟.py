@@ -16,9 +16,15 @@ pd.set_option('display.max_rows', None)
 pd.set_option('max_colwidth', 100)
 
 
-
 # 子任务信息，用于内部DF任务相关列名称
-sub_tk_colu = ['gateway','count','type','stat','ioFlg','timestamp','distance']
+sub_tk_colu = [
+    'gateway',
+    'count',
+    'type',
+    'stat',
+    'ioFlg',
+    'timestamp',
+    'distance']
 
 
 class Frame:
@@ -27,7 +33,7 @@ class Frame:
         self.num_h = y
         self.cnt = x * y
         self.completed_task = pd.DataFrame(
-            columns= sub_tk_colu)
+            columns=sub_tk_colu)
 
         # shelves 代表货架的二维数组,元素坐标是位置，值是序号
         self.shelves_idx = None
@@ -75,7 +81,7 @@ class Frame:
         return rst_cnt
 
     # 获取货架上各种设备类别、状态的货柜数量，即当前货架总体库存情况
-    def get_frame_info(self, ispt:bool = False) -> int:
+    def get_frame_info(self, ispt: bool = False) -> int:
         rst = self.df_dis.groupby('task').count()
         total = rst['x'].sum()
         type_stat = rst.index.values
@@ -156,7 +162,7 @@ class Frame:
         return flg
 
     # 入库子任务 sub_task[0]确定从左边入库还是右边, sub_task 子任务信息
-    def SubTaskIn(self, sub_task: list = None, ispt:bool = False):
+    def SubTaskIn(self, sub_task: list = None, ispt: bool = False):
         cnt_tot = sub_task[1]
         cur_cnt = self.get_frame_cnt(0)
         # 当前没有足够的空货位，不能入库
@@ -197,14 +203,14 @@ class Frame:
             print(cur_task)
         t_df = pd.DataFrame(
             [cur_task],
-            columns= sub_tk_colu)
+            columns=sub_tk_colu)
         self.completed_task = self.completed_task.append(
             t_df, ignore_index=True)
 
         return dis_tot
 
     # 出库子任务， sub_task[0]确定从左边入库还是右边, sub_task 子任务信息
-    def SubTaskOut(self, sub_task: list = None, ispt:bool = False):
+    def SubTaskOut(self, sub_task: list = None, ispt: bool = False):
         cnt_tot = sub_task[1]
         task_flg = self.get_task_flag(sub_task)
         cur_cnt = self.get_frame_cnt(task_flg)
