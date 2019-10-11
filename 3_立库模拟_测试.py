@@ -1,6 +1,7 @@
 from pandas import DataFrame
 import pandas as pd
 import numpy as np
+import random as rd
 # 不用科学计数法输出
 np.set_printoptions(suppress=True)
 # 设置打印全部
@@ -30,60 +31,101 @@ sub_columns = [
 class TaskList():
     def __init__(self):
         # 需要在分解的总任务列表
-        self.task_df = pd.DataFrame(
+        self.task_in = pd.DataFrame(
             columns=task_columes)
-        self.sub_task_df = pd.DataFrame(columns= sub_columns)
-        # 任务号，数量，完成数量，设备状态，设备类型
+        self.sub_task_in = pd.DataFrame(columns=sub_columns)
+        self.sub_test_out = pd.DataFrame(columns=sub_columns)
         self.task_no = 100000
+        # 每个任务以万记还是以千记
+        num = 100
         # 每个任务5000-30000，共210个任务
-        dan = np.random.randint(5, 30, 210) * 1000
-        self.set_total_task('dan', dan)
+        cnt = np.random.randint(5, 30, 210) * num
+        self.set_total_task_in('dan', cnt)
         # 每个任务5000-20000，共210个任务
-        sansi = np.random.randint(5, 20, 100) * 1000
-        self.set_total_task('sansi', sansi)
+        cnt = np.random.randint(5, 20, 100) * num
+        self.set_total_task_in('sansi', cnt)
         # 每个任务7000-15000，共80个任务
-        sansan = np.random.randint(7, 15, 80) * 1000
-        self.set_total_task('sansan', sansan)
+        cnt = np.random.randint(7, 15, 80) * num
+        self.set_total_task_in('sansan', cnt)
         # 每个任务7000-15000，共80个任务
-        hgq = np.random.randint(7, 15, 80) * 1000
-        self.set_total_task('hgq', hgq)
+        cnt = np.random.randint(7, 15, 80) * num
+        self.set_total_task_in('hgq', cnt)
         # 每个任务7000-15000，共80个任务
-        jzq = np.random.randint(7, 15, 80) * 1000
-        self.set_total_task('jzq', jzq)
+        cnt = np.random.randint(7, 15, 80) * num
+        self.set_total_task_in('jzq', cnt)
         # 每个任务12000-50000，共80个任务
-        cjq = np.random.randint(12, 50, 80) * 1000
-        self.set_total_task('cjq', cjq)
+        cnt = np.random.randint(12, 50, 80) * num
+        self.set_total_task_in('cjq', cnt)
 
     # 设置新购任务，包含设备类别、总数量，
-    def set_total_task(self, equip: str = 'dan', numbers: np.array = None):
+    def set_total_task_in(self, equip: str = 'dan', numbers: np.array = None):
         self.task_no += 10000
         sub_no = 0
         tl = []
         for num in numbers:
             sub_no += 1
             t = [equip, self.task_no + sub_no, num]
+            # 生成一个DF
             df = pd.DataFrame([t], columns=task_columes)
             tl.append(df)
+        # DF拼接，合并元素为DF类型的list，生成一个大的DF
         rst_df = pd.concat(tl)
-        self.task_df = self.task_df.append(rst_df, ignore_index=True)
-        for t in self.task_df.index:
+        self.task_in = self.task_in.append(rst_df, ignore_index=True)
+        for t in self.task_in.index:
             # 将父任务分解成8个子任务
-            self.div_task(self.task_df.iloc[t, 2],
-                          8,
-                          self.task_df.iloc[t, 1],
-                          self.task_df.iloc[t, 0],
-                          'xin',
-                          'in')
+            self.div_task_in(self.task_in.iloc[t, 2],
+                             8,
+                             self.task_in.iloc[t, 1],
+                             self.task_in.iloc[t, 0],
+                             'xin',
+                             'in')
 
-    # 将新购任务分解成多条子入库任务
+    # 将新购任务分解成多条全检出库任务
+    def set_test_out(self):
+        idx = self.task_in.index
+        outs = []
+        for i in idx:
+            one_task = self.task_in.loc[i]
+            outs.append(self.div_test_out(one_task))
+        self.sub_test_out = pd.concat(outs)
 
-    def div_task(self,
-                 total: int = 0,
-                 cnt: int = 8,
-                 task_no: int = 0,
-                 equip_type: str = 'dan',
-                 status: str = 'xin',
-                 io_type: str = 'in'):
+
+
+
+    # 检定出库任务分解，子任务数量随机，返回列表类型 task_columes = ['equip_type', 'task_no', 'quantity']
+    def div_test_out(self,  task = None):
+        rst = []
+        # 根据设备类别，设置检定出库子任务一次出库数量
+        beg = 100
+        end = 200
+        if  task['equip_type'] == 'hgq':
+            beg = 80
+            end = 160
+
+        sub_cnt = rd.randint(beg, end)
+        cnt = task['quantity']
+        while cnt - sub_cnt > 0:
+            rst.append(sub_cnt)
+            cnt = cnt - sub_cnt
+            sub_cnt = rd.randint(10,20)
+        if cnt > 0 :
+            rst.append(cnt)
+        rst2 = []
+        for index, value in enumerate(rst):
+            subno = index + 1000
+            sub = [task['task_no'], subno, value,  task['equip_type'], 'new', 'out']
+            rst2.append(sub)
+        rstdf = pd.DataFrame(rst2, columns=sub_columns)
+        return rstdf
+
+    # 将新购任务分解成多条子入库任务,cnt子任务数
+    def div_task_in(self,
+                    total: int = 0,
+                    cnt: int = 8,
+                    task_no: int = 0,
+                    equip_type: str = 'dan',
+                    status: str = 'xin',
+                    io_type: str = 'in'):
         every_cnt = int(round(total / cnt))
         x = total % cnt
         # 拆分成cnt个任务后，每个子任务出入库数量的清单
@@ -107,22 +149,23 @@ class TaskList():
 
         # print('\n  *****sub task : task_no:{}, sub_no:{}****'.format(task_no, sub_no))
         sub_t = pd.DataFrame(
-            sub_list,columns=sub_columns
+            sub_list, columns=sub_columns
         )
 
-        self.sub_task_df = self.sub_task_df.append(sub_t, ignore_index=True)
+        self.sub_task_in = self.sub_task_in.append(sub_t, ignore_index=True)
 
 
 if __name__ == '__main__':
     all_task = TaskList()
-    print(all_task.task_df)
+    # print(all_task.task_in)
     print('-----------------------------------')
-    print(all_task.sub_task_df)
-    #
+    # print(all_task.sub_task_in)
+    all_task.set_test_out()
+    print('所有出库任务数量:{}'.format( all_task.sub_test_out.shape[0]))
     # qt = queue.Queue()
     # for cnt in dd:
     #     qt.put( cnt )
     # print( dd )
     # while not qt.empty():
     #     xx = qt.get()
-    #     div_task( xx , 8)
+    #     div_task_in( xx , 8)
