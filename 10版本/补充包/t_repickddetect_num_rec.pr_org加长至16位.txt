@@ -1,2 +1,0 @@
--- Add/modify columns 
-alter table T_REPICKDDETECT_NUM_REC modify pr_org VARCHAR2(16);
