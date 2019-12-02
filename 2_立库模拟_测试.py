@@ -18,20 +18,25 @@ print = pprint.pprint
 #################################################################
 shelves_idx = np.arange(
     1, 7200 + 1).reshape((80, 90))
-# shelves_idx = shelves_idx[::-1, ]
+shelves_idx = shelves_idx[::-1, ]
 # print(shelves_idx)
-l_idx = np.argwhere(shelves_idx == 270) + 1
-# print(l_idx)
+print('+++++++++++++++++++++++++++++++++++++  1')
+print(shelves_idx[1,1])
+print('+++++++++++++++++++++++++++++++++++++  2')
+l_idx = np.argwhere(shelves_idx == 270)
+print('l_idx:' )
+print(l_idx)
 # ll = [l_idx[0][1] , l_idx[0][0] ]
 # ll[0] = ll[0]+1
 # ll[1] = ll[1]+1
 # print(ll)
-print('+++++++++++++++++++++++++++++++++++++')
+print('+++++++++++++++++++++++++++++++++++++  3')
 shelves_distance = shelves_idx.ravel()
+print(np.argwhere(shelves_idx == 270))
 # print(shelves_distance)
 l_idx = np.argwhere(shelves_idx == 1) + 1
 print(l_idx)
-print('+++++++++++++++++++++++++++++++++++++')
+print('+++++++++++++++++++++++++++++++++++++  4')
 for i in range(2, 7200 + 1):
     idx = np.argwhere(shelves_idx == i) + 1
     l_idx = np.vstack((l_idx, idx))
@@ -58,18 +63,18 @@ print('入库200只')
 idx = df_idx.loc[(df_idx['disR'] == 0)].index
 df2 = df_idx.loc[idx].sort_values(by='dis', ascending=True)
 df2['idx'] = df2.index
-print(df2.head(200))
+# print(df2.head(200))
 
 idx2 = df2.head(200).index
 print(len(idx2))
 df_idx.loc[idx2, 'disR'] = 9
 # print(df_idx.loc[idx2])
 
-print(idx2)
-print(df_idx.loc[df_idx['disR'] == 9])
+# print(idx2)
+# print(df_idx.loc[df_idx['disR'] == 9])
 
 df4 = df_idx.groupby(by='disR').count()
-print(df4)
+# print(df4)
 print('=========================')
 if 0 in df4.index:
     print(df4.index.values)
@@ -77,7 +82,7 @@ if 0 in df4.index:
     print(df4['x'])
     print( df4[ 'x' ][5] )
 
-
+#
 # 192.30.253.112 github.com
 # 192.30.253.113 github.com
 # 151.101.184.133 assets-cdn.github.com

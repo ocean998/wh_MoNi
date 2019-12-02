@@ -50,6 +50,7 @@ class Frame:
 
         # 初始化DataFrame，每行保存货架x、y坐标，坐标到左下角距离
         l_idx = np.argwhere(self.shelves_idx == 1) + 1
+        print('np.argwhere(self.shelves_idx == 1) + 1 is: \n',l_idx)
         for i in range(2, self.cnt + 1):
             # argwhere 求数组中值对应的坐标, +1为不从零开始
             idx = np.argwhere(self.shelves_idx == i) + 1
@@ -59,7 +60,6 @@ class Frame:
         self.df_dis = pd.DataFrame(l_idx, index=range(1, len(l_idx) + 1))
         self.df_dis.columns = ['x', 'y']
         self.df_dis[['x', 'y']] = self.df_dis[['y', 'x']]
-
         # print(self.df_dis)
         # 距离是直角三角形斜边，作为机器人移动到相应时间的基础,此处是左边到出口距离
         self.df_dis['dis_1'] = round(
